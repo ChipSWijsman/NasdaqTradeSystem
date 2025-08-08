@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Profile 1": {
+      "commandName": "Executable",
+      "executablePath": "C:\\Source\\ZomerCompetitieTrader2025\\Build\\NasdaqTrader.CLI.exe"
+    }
+  }
+}
