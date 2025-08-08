@@ -16,6 +16,7 @@ public class HtmlGenerator
     {
         Handlebars.Configuration.FormatterProviders.Add(new DecimalFormatter());
         Handlebars.Configuration.FormatterProviders.Add(new CustomDateTimeFormatter("dd-MM-yyyy"));
+        Handlebars.Configuration.FormatterProviders.Add(new TimeSpanFormatter("s\\.ffff"));
 
         var indexTemplate = GetTemplate("StockTemplate.html");
 
@@ -66,8 +67,9 @@ public class HtmlGenerator
                 Cash = traderSystemSimulation.BankAccounts[c],
                 HoldingsValue = CalculateHoldingsValue(traderSystemSimulation, c, results),
                 Total = (CalculateHoldingsValue(traderSystemSimulation, c, results) +
-                         traderSystemSimulation.BankAccounts[c])
-            }).ToArray();
+                         traderSystemSimulation.BankAccounts[c]),
+                RunDuration = traderSystemSimulation.Durations[c].Elapsed,
+            }).OrderByDescending(c => c.Total).ToArray();
 
         tasks.AddRange(GenerateCompaniesPlot(baseDirectory, traderSystemSimulation, gameDate));
         Directory.CreateDirectory(Path.Combine(baseDirectory, $"{gameDate:dd-MM-yyyy-HH-mm}"));
@@ -195,7 +197,7 @@ public class HtmlGenerator
 
                 string html = GenerateHtmlForPlayer(player, baseDirectory, traderSystemSimulation,
                     gameDate);
-                File.WriteAllText(Path.Combine(baseDirectory, $"{gameDate:dd-MM-yyyy-HH-mm}", "{player.CompanyName}.html"), html);
+                File.WriteAllText(Path.Combine(baseDirectory, $"{gameDate:dd-MM-yyyy-HH-mm}", $"{player.CompanyName}.html"), html);
             }));
         }
 

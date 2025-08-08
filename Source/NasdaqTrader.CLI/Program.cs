@@ -47,12 +47,19 @@ if (!int.TryParse(startingCashAsText, out startingCash))
     startingCash = 1000;
 }
 
+int? seed = null;
+string seedAsText = GetParameter("--seed", "Random generator seed", parameters, shouldPrompt: false);
+if (int.TryParse(seedAsText, out int seedValue))
+{
+	seed = seedValue;
+}
+
 BotLoader botLoader = new BotLoader();
 
 var botTypes = new Dictionary<string, Type>();
 botLoader.DetermineBots(AppContext.BaseDirectory + "Bots", botTypes);
 
-var stocksLoader = new StockLoader(dataFolder, amountOfStock);
+var stocksLoader = new StockLoader(dataFolder, amountOfStock, seed);
 var year = new Random().Next(2021, 2024);
 TraderSystemSimulation traderSystemSimulation = new TraderSystemSimulation(
     botTypes.Values.Select(b => (ITraderBot)Activator.CreateInstance(b)).ToList(),
@@ -63,29 +70,29 @@ TraderSystemSimulation traderSystemSimulation = new TraderSystemSimulation(
 Dictionary<ITraderBot, Task> playerTasks = new();
 foreach (var player in traderSystemSimulation.Players)
 {
-    playerTasks.Add(player,
-        Task.Run(async () =>
-        {
-            while (await traderSystemSimulation.DoSimulationStep(player))
-            {
-            }
-        }));
-}
-
-await Task.Delay(timeLimit);
-foreach (var player in traderSystemSimulation.Players)
-{
-    if (playerTasks[player].IsCompleted == false)
+    CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
+    var token = cancellationTokenSource.Token;
+    var task = Task.Run(async () =>
     {
-        traderSystemSimulation.DidNotFinished.Add(player);
+        traderSystemSimulation.Durations[player].Start();
+        while (await traderSystemSimulation.DoSimulationStep(player))
+        {
+            if (token.IsCancellationRequested)
+            {
+                traderSystemSimulation.DidNotFinished.Add(player);
+                break;
+            }
+        }
+        traderSystemSimulation.Durations[player].Stop();
+    }, cancellationToken: token);
+
+    await Task.Delay(timeLimit);
+    await cancellationTokenSource.CancelAsync();
+    while (task is { IsCompleted: false, IsCanceled: false, IsFaulted: false })
+    {
+        await Task.Delay(100);
     }
 }
-
-foreach (var player in traderSystemSimulation.Players)
-{
-    playerTasks[player].Wait();
-}
-
 
 Console.WriteLine("Generating html results");
 html.GenerateFiles(Path.Combine(AppContext.BaseDirectory, "Results"), traderSystemSimulation);
@@ -101,16 +108,19 @@ if (!runSilent)
     p.Start();
 }
 
-string GetParameter(string parameter, string question, string[] arguments)
+string GetParameter(string parameter, string question, string[] arguments, bool shouldPrompt = true)
 {
     int indexOf = Array.IndexOf(arguments, parameter);
     if (indexOf == -1)
     {
+        if (!shouldPrompt)
+        {
+            return null;
+        }
+
         Console.WriteLine(question);
         return Console.ReadLine();
     }
 
     return arguments[indexOf + 1];
-
-    return "";
 }

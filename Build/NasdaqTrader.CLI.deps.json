@@ -186,7 +186,7 @@
       "NasdaqTrader.Bot.Core/1.0.0": {
         "runtime": {
           "NasdaqTrader.Bot.Core.dll": {
-            "assemblyVersion": "1.0.0.0",
+            "assemblyVersion": "1.0.0",
             "fileVersion": "1.0.0.0"
           }
         }
@@ -196,10 +196,7 @@
           "NasdaqTrader.Bot.Core": "1.0.0"
         },
         "runtime": {
-          "NasdaqTraderSystem.Core.dll": {
-            "assemblyVersion": "1.0.0.0",
-            "fileVersion": "1.0.0.0"
-          }
+          "NasdaqTraderSystem.Core.dll": {}
         }
       },
       "NasdaqTraderSystem.Html/1.0.0": {
@@ -210,7 +207,7 @@
         },
         "runtime": {
           "NasdaqTraderSystem.Html.dll": {
-            "assemblyVersion": "1.0.0.0",
+            "assemblyVersion": "1.0.0",
             "fileVersion": "1.0.0.0"
           }
         }
